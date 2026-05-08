@@ -1,0 +1,39 @@
+# Environment files
+.env
+.env.*
+*.env
+.playwright*
+
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+/images/
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+frontend/public/images/
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor files
+.vscode/
+.idea/
+
+# Optional: coverage
+coverage/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

@@ -1,8 +1,10 @@
-# PlotChain — CLAUDE.md
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What This Is
 
-Blockchain real estate marketplace for Sector C-14, Islamabad (641 plots). Every plot is an ERC-721A NFT. Secondary-market sales auto-deduct 2% commission to admin via smart contract. Three roles: Admin, Dealer, End User. Homepage is a clickable SVG sector map; click any plot to see full on-chain ownership history.
+Blockchain real estate marketplace for Paradise Valley (24 plots). Every plot is an ERC-721A NFT. Secondary-market sales auto-deduct 2% commission to admin via smart contract. Three roles: Admin, Dealer, End User. Homepage is a clickable SVG sector map; click any plot to see full on-chain ownership history.
 
 ---
 
@@ -21,7 +23,6 @@ Blockchain real estate marketplace for Sector C-14, Islamabad (641 plots). Every
 | Low-level RPC | viem | 2.48.8 |
 | Server cache | TanStack Query | 5.x |
 | IPFS | pinata SDK | 2.5.6 |
-| Pan/zoom | react-zoom-pan-pinch | latest |
 | PDF | jsPDF | 4.2.1 |
 | PDF raster | html2canvas | 1.4.1 |
 | QR codes | qrcode | 1.5.4 |
@@ -45,13 +46,26 @@ contracts/PlotNFT.sol                   contracts/PlotMarketplace.sol
         └──────────────┬──────────────────────────┘
                        ▼ viem getLogs
           frontend/hooks/usePlotHistory.js
+          frontend/hooks/usePlotNFT.js       ← usePlotOwners (batch ownerOf)
+          frontend/hooks/useMarketplace.js   ← useListings (batch getListingDetails)
                        │
+          frontend/components/SectorMap.jsx  ← overlays live status on sectorLayout coords
+          frontend/components/PlotDetailPanel.jsx
           frontend/components/HistoryTimeline.jsx
-                       │
-          frontend/app/page.jsx (SectorMap)
                 Pinata gateway
           ← tokenURI → ipfs://<CID> → plot metadata JSON
+          frontend/hooks/usePinataMetadata.js → /api/pinata/metadata?cid=...
 ```
+
+### Critical data-flow: map status overlay
+
+`lib/sectorLayout.js` provides **only** plot coordinates, SVG geometry, zone definitions, and stable metadata (size, facing, street). It intentionally contains mock statuses for development. For production, `SectorMap` must read live statuses by calling:
+- `usePlotOwners(tokenIds)` → `{ [tokenId]: address | null }` (null = not minted)
+- `useListings(tokenIds)` → `{ [tokenId]: { isActive, price, seller } | null }`
+
+Derive status: `isActive listing → "listed"`, `owner === adminAddress → "available"`, `owner !== adminAddress && !listed → "sold"`, `ownerOf reverts / null → "unminted"`.
+
+Both hooks batch all reads in a single `useReadContracts` call — never call them in a loop.
 
 ---
 
@@ -65,14 +79,42 @@ plotchain/
 │   └── output/         ABI + bytecode JSON (gitignored, generated)
 ├── deploy/
 │   ├── deploy.js       ethers.js ContractFactory deploy to Sepolia
-│   ├── seed.js         pin demo metadata to Pinata + call batchMint in chunks
-│   └── plotData.json   641-plot definitions for seeding
+│   ├── seed.js         pins 24 plot metadata JSONs to Pinata, calls batchMint once
+│   └── plotData.json   24-plot definitions (PV-01 through PV-24)
 ├── frontend/
 │   ├── app/            Next.js App Router pages + API routes
-│   ├── components/     Pure UI: SectorMap, PlotDetailPanel, HistoryTimeline, etc.
-│   ├── hooks/          Chain reads only: usePlotNFT, useMarketplace, usePlotHistory
-│   ├── lib/            pinata.js wrapper, sectorLayout.js (plot coords + zones)
-│   └── constants/      contracts.js — ABIs + deployed addresses (source of truth)
+│   │   ├── api/pinata/ metadata (GET, proxies Pinata gateway) + upload (POST, server-only)
+│   │   ├── admin/      Admin dashboard — role-gated via RoleGuard
+│   │   ├── dealer/     Dealer portal — role-gated via RoleGuard
+│   │   ├── dashboard/  User portfolio page
+│   │   └── plots/      Full plot grid/list view
+│   ├── components/
+│   │   ├── SectorMap.jsx        SVG map — reads sectorLayout coords, overlays chain status
+│   │   ├── PlotDetailPanel.jsx  Slide-in panel — opened when map plot is clicked
+│   │   ├── HistoryTimeline.jsx  Renders usePlotHistory events
+│   │   ├── MintModal.jsx        Admin mint flow (Pinata upload → mint tx)
+│   │   ├── RoleGuard.jsx        Wraps pages; redirects if role missing
+│   │   ├── AddressPill.jsx      Truncated address + copy + Etherscan link
+│   │   ├── StatCard.jsx         Reusable stat tile used in admin/dealer dashboards
+│   │   ├── StatusBadge.jsx      Colored chip for plot status
+│   │   ├── Toaster.jsx          Toast notification system (useToast hook)
+│   │   ├── CertificateGenerator.jsx  jsPDF + html2canvas PDF cert
+│   │   ├── ConnectPrompt.jsx    Shown to unauthenticated users
+│   │   └── Skeleton.jsx         Loading placeholder shapes
+│   ├── hooks/
+│   │   ├── usePlotNFT.js       usePlotOwner, usePlotTokenURI, useTotalSupply,
+│   │   │                        usePlotOwners (batch), useMintPlot
+│   │   ├── useMarketplace.js   useListing, useListings (batch), useCommissionRate,
+│   │   │                        useListPlot, useBuyPlot, useDelistPlot, useUpdatePrice
+│   │   ├── usePlotHistory.js   usePlotHistory (per-token events), useGlobalEvents
+│   │   ├── usePinataMetadata.js usePinataMetadata, cidFromTokenURI, ipfsHttpUrl
+│   │   ├── useRoles.js         useRoles → { isAdmin, isDealer, address, isConnected }
+│   │   └── usePostHog.js       track(), PH_EVENTS constants
+│   ├── lib/
+│   │   ├── sectorLayout.js     Plot SVG coords + zone defs (source of truth for geometry)
+│   │   └── pinata.js           Server-side Pinata SDK wrapper
+│   └── constants/
+│       └── contracts.js        ABIs + deployed addresses (import from here only)
 ├── .env.example        All required env vars documented
 └── package.json        Root-level; frontend deps only (no Hardhat config)
 ```
@@ -91,7 +133,7 @@ node compile/compile.js
 # Deploy all three contracts to Sepolia (reads .env)
 node deploy/deploy.js
 
-# Seed demo plots: pins metadata to Pinata, calls batchMint in ~7 chunks
+# Seed: pins 24 plot metadata JSONs to Pinata, calls batchMint once for all 24 plots
 node deploy/seed.js
 
 # Dev server
@@ -102,8 +144,6 @@ cd frontend && npm run build
 
 # Lint
 cd frontend && npm run lint
-
-# No automated tests for v1 — verification is manual via demo flow
 ```
 
 > **No test command exists in v1.** Do not add placeholder test scripts; they create false confidence.
@@ -125,6 +165,9 @@ All secrets in `.env` (deploy scripts) and `frontend/.env.local` (Next.js). Noth
 | `NEXT_PUBLIC_ROLE_MANAGER_ADDRESS` | `frontend/.env.local` | Deployed RoleManager contract address |
 | `NEXT_PUBLIC_ADMIN_ADDRESS` | `frontend/.env.local` | Admin wallet address for frontend role checks |
 | `NEXT_PUBLIC_DEPLOYMENT_BLOCK` | `frontend/.env.local` | Block number of marketplace deploy (for getLogs fromBlock) |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | `frontend/.env.local` | WalletConnect v2 project ID (RainbowKit) |
+| `NEXT_PUBLIC_POSTHOG_KEY` | `frontend/.env.local` | PostHog project API key (optional) |
+| `NEXT_PUBLIC_POSTHOG_HOST` | `frontend/.env.local` | PostHog ingestion host (default: us.i.posthog.com) |
 
 `PINATA_JWT` must only appear in server-side code (`frontend/app/api/pinata/upload/route.js`). Any file prefixed `NEXT_PUBLIC_` is browser-visible — confirm no secrets use that prefix.
 
@@ -142,11 +185,13 @@ All secrets in `.env` (deploy scripts) and `frontend/.env.local` (Next.js). Noth
 **Frontend**
 - `hooks/` contains only chain reads and writes (wagmi/viem). Zero JSX allowed in hooks.
 - `components/` contains only rendering. No direct contract calls; receive data as props or call hooks.
-- `lib/sectorLayout.js` is the single source of truth for plot coordinates, zone types, and `tradeable` flags. Do not hardcode plot positions in components.
+- `lib/sectorLayout.js` is the single source of truth for plot coordinates and zone geometry. Status fields in sectorLayout are mock/dev data — always overlay with live chain reads before rendering.
 - `constants/contracts.js` exports ABI arrays and addresses. Import from here only. Never paste ABI inline in a component.
 - Ownership history is always reconstructed from viem `getLogs` in `hooks/usePlotHistory.js`. Never store or fetch history from Pinata.
-- Pinata metadata fetching goes through `hooks/usePinataMetadata.js` → TanStack Query cache. Do not fetch IPFS directly in components.
+- Pinata metadata fetching goes through `hooks/usePinataMetadata.js` → `/api/pinata/metadata` → TanStack Query cache. Do not fetch IPFS directly in components.
 - Error handling: contract call errors surface via wagmi's `error` return value and are displayed in the relevant component. Do not use `alert()` or `console.error` as user-facing error UI.
+- TanStack Query global config: `staleTime: 30_000`, `refetchOnWindowFocus: false`. Per-query overrides only when the data has different staleness requirements.
+- PostHog is initialised in `providers.jsx`. Track events using `track(PH_EVENTS.EVENT_NAME, payload)` from `hooks/usePostHog.js`. All event name constants live in `PH_EVENTS`.
 
 ---
 
@@ -170,28 +215,26 @@ All secrets in `.env` (deploy scripts) and `frontend/.env.local` (Next.js). Noth
 
 9. **Never call `getLogs` without `fromBlock: DEPLOYMENT_BLOCK`.** Scanning from genesis on every page load times out on public RPCs. Always use `NEXT_PUBLIC_DEPLOYMENT_BLOCK`.
 
-10. **Never batch fewer than 100 or more than 100 plots per `batchMint` call in `seed.js`.** Under 100 wastes transactions; over 100 risks hitting Sepolia's ~30M gas block limit with 641 tokenURIs as calldata.
+10. **Never batch fewer than 100 or more than 100 plots per `batchMint` call in `seed.js` (if scaling beyond 24).** The current Paradise Valley has exactly 24 plots, so a single batchMint call covers all of them well under the gas limit.
+
+11. **Never read live plot status from `sectorLayout.js`.** That file's `status` field is mock data for layout development. Always derive status from `usePlotOwners` + `useListings` before rendering the map.
 
 ---
 
 ## Open Questions / Known Weirdness
 
-1. **ERC-721A `ownerOf` backward walk cost.** For tokens minted mid-batch (e.g., token 450 in a 641-plot batch), `ownerOf` may scan up to 450 storage slots. Acceptable for v1 RPC reads, but document this before adding any contract that calls `ownerOf` in a loop.
+1. **ERC-721A `ownerOf` backward walk cost.** For tokens minted mid-batch, `ownerOf` may scan backward through storage slots. Acceptable for v1 RPC reads, but document this before adding any contract that calls `ownerOf` in a loop.
 
-2. **SVG performance at 641 plots.** The full sector map renders all 641 `<PlotShape>` elements. At high zoom-out this can cause jank. The context says to defer full sector to v1.1, but the codebase ships with `sectorLayout.js` containing all 641 entries. A future dev may try to render all of them and wonder why it's slow — viewport culling is not yet implemented.
+2. **No freeze mechanism on the contract yet.** The admin dashboard spec includes a "Freeze/unfreeze plot" tool, but `PlotNFT.sol` has no `freeze` function. This feature is planned but not yet written.
 
-3. **30 odd-shaped plots have no defined polygon coordinates yet.** `PlotShape.jsx` branches on `plot.type === 'odd'` and renders a `<polygon>` — but `plotData.json` for v1 demo only covers Block 1 (plots 1–14), which are all rectangular. The polygon coordinate format for odd plots is specified but not yet populated. Don't assume all entries in `plotData.json` are complete.
+3. **Commission on primary sales — is the bypass always correct?** Admin sales to Dealers are designed to be commission-free because Admin would otherwise pay commission to itself. However, if Admin ever sells directly to an End User (bypassing Dealers entirely), the same bypass applies. It has not been decided whether Admin-to-User direct sales should be allowed, and if so, whether they should remain commission-free or attract a different rate.
 
-4. **Commission rate is set at deploy time with no upgrade path.** `PlotMarketplace.sol` stores `commissionRate` as a state variable readable by admin, but there is no `setCommissionRate` function defined in the context. Either it exists and wasn't documented, or rate changes require redeployment. Verify before shipping.
-
-5. **No freeze mechanism on the contract yet.** The admin dashboard spec includes a "Freeze/unfreeze plot" tool, but `PlotNFT.sol` in the context has no `freeze` function. This feature is either planned but not yet written, or needs to be added before the admin dashboard component can work.
+4. **`useRoles` has an env-based admin fallback.** If `NEXT_PUBLIC_ADMIN_ADDRESS` matches the connected wallet, that wallet is treated as admin even if `RoleManager.isAdmin()` returns false. This is intentional for cases where the RoleManager contract address isn't configured, but it means admin access degrades gracefully rather than failing hard.
 
 ---
 
 ## Observability
 
-**Not yet configured for v1.** The following are the intended integration points when added:
+PostHog is initialised in `frontend/app/providers.jsx` — it activates only when `NEXT_PUBLIC_POSTHOG_KEY` is set. Events are tracked via `track(PH_EVENTS.X, payload)` in hooks. Current tracked events: `WALLET_CONNECTED`, `PLOT_MINTED`, `PLOT_LISTED`, `PLOT_PURCHASED`, `PLOT_DELISTED`, `PLOT_PRICE_UPDATED`.
 
-- **Sentry:** Initialize in `frontend/app/layout.jsx` (server) and `frontend/app/error.jsx` (client error boundary). Capture unhandled wagmi transaction errors in `hooks/useMarketplace.js` catch blocks.
-- **PostHog:** Initialize in `frontend/app/layout.jsx`. Track: `plot_viewed` (plot detail panel open), `plot_purchased` (buyPlot tx confirmed), `certificate_downloaded`, `wallet_connected`.
-- Neither tool is installed in v1. Do not add them without also wiring the error boundary in `app/error.jsx`.
+Sentry is **not yet installed**. Intended integration points: `frontend/app/layout.jsx` (server init) and `frontend/app/error.jsx` (client error boundary). Do not add Sentry without also wiring the error boundary.

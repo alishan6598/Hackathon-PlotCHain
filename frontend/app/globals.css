@@ -1,0 +1,402 @@
+@import url("https://api.fontshare.com/v2/css?f[]=metropolis@400,500,600,700&display=swap");
+@import "tailwindcss";
+@import "@rainbow-me/rainbowkit/styles.css";
+
+@theme {
+  /* Surfaces */
+  --color-background: #faf9f9;
+  --color-bg: #faf9f9;
+  --color-surface: #faf9f9;
+  --color-surface-bright: #faf9f9;
+  --color-surface-dim: #dadada;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f4f3f3;
+  --color-surface-container: #efeeed;
+  --color-surface-container-high: #e9e8e8;
+  --color-surface-container-highest: #e3e2e2;
+  --color-surface-2: #efeeed;
+
+  /* Text / outline */
+  --color-on-surface: #1a1c1c;
+  --color-on-surface-variant: #404752;
+  --color-on-background: #1a1c1c;
+  --color-text: #1a1c1c;
+  --color-muted: #707883;
+  --color-outline: #707883;
+  --color-outline-variant: #bfc7d4;
+  --color-border: #bfc7d4;
+
+  /* Primary (blue) */
+  --color-primary: #0061a4;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2196f3;
+  --color-on-primary-container: #002c4f;
+  --color-primary-fixed: #d1e4ff;
+  --color-primary-fixed-dim: #9ecaff;
+
+  /* Secondary (green) */
+  --color-secondary: #006e1c;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #91f78e;
+  --color-on-secondary-container: #00731e;
+
+  /* Tertiary (orange) */
+  --color-tertiary: #904d00;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #db7900;
+  --color-on-tertiary-container: #452200;
+
+  /* Status colors */
+  --color-success: #4ade80;
+  --color-warning: #fb923c;
+  --color-danger: #f87171;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Status (named) */
+  --color-status-available: #4ade80;
+  --color-status-listed: #fb923c;
+  --color-status-sold: #f87171;
+
+  /* Zoning palette */
+  --color-zone-residential: #f5f5dc;
+  --color-zone-markaz: #2196f3;
+  --color-zone-park: #4caf50;
+  --color-zone-commercial: #f44336;
+  --color-zone-apartments: #ffeb3b;
+  --color-zone-public: #9e9e9e;
+
+  /* Legacy amber alias mapped to primary so any stragglers don't blow up */
+  --color-amber: #0061a4;
+  --color-amber-soft: rgba(0, 97, 164, 0.12);
+
+  /* Radius */
+  --radius-sm: 0.125rem;
+  --radius-DEFAULT: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  /* Font family */
+  --font-sans: "Metropolis", var(--font-metropolis), ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography helpers */
+.display-lg {
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.headline-md {
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.body-base {
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+.label-technical {
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.map-plot-number {
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+/* Map canvas — radial dot grid */
+.map-canvas-pattern {
+  background-color: var(--color-background);
+  background-image: radial-gradient(
+    var(--color-outline-variant) 0.6px,
+    transparent 0.6px
+  );
+  background-size: 24px 24px;
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  transition: transform 0.1s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+.btn-primary:hover {
+  opacity: 0.92;
+}
+.btn-primary:active {
+  transform: scale(0.98);
+}
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-outline {
+  background: var(--color-surface-bright);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.8rem 1.25rem;
+  transition: background 0.15s ease;
+}
+.btn-outline:hover {
+  background: var(--color-primary-fixed);
+}
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-on-surface);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-ghost:hover {
+  background: var(--color-surface-container);
+  border-color: var(--color-outline);
+}
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Backwards-compat: anything still using .btn-amber gets the blue primary look */
+.btn-amber {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.7rem 1.1rem;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.btn-amber:hover {
+  opacity: 0.92;
+}
+.btn-amber:active {
+  transform: scale(0.98);
+}
+.btn-amber:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.card {
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 0.75rem;
+}
+
+.surface-tile {
+  background: var(--color-surface-container);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.input-dark,
+.input-base {
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s ease;
+}
+.input-dark:focus,
+.input-base:focus {
+  border-color: var(--color-primary);
+}
+
+/* Pulse animation for listed plots — subtle blue glow */
+@keyframes plotPulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(251, 146, 60, 0));
+    stroke-width: 2;
+  }
+  50% {
+    filter: drop-shadow(0 0 6px rgba(251, 146, 60, 0.7));
+    stroke-width: 3;
+  }
+}
+.plot-listed-pulse {
+  animation: plotPulse 1.6s ease-in-out infinite;
+}
+
+/* Plot hover */
+.plot-hover {
+  transition: filter 0.12s ease, transform 0.12s ease;
+}
+.plot-hover:hover {
+  cursor: pointer;
+  stroke: #ffffff;
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.18));
+}
+
+/* Skeleton */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-container) 0%,
+    var(--color-surface-container-high) 50%,
+    var(--color-surface-container) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 0.5rem;
+}
+
+/* Slide-in panel */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.slide-in-right {
+  animation: slideInRight 0.25s ease-out;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-container-low);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-outline);
+}
+
+/* ===== Premium Map Shell — dark, glass, glow ===== */
+.map-shell {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(33, 150, 243, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(76, 175, 80, 0.10) 0%, transparent 50%),
+    linear-gradient(180deg, #0a1020 0%, #060914 100%);
+  overflow: hidden;
+}
+.map-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(rgba(120, 160, 220, 0.10) 1px, transparent 1px),
+    radial-gradient(rgba(120, 160, 220, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px, 84px 84px;
+  background-position: 0 0, 14px 14px;
+  pointer-events: none;
+}
+.map-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.glass {
+  background: rgba(15, 22, 38, 0.55);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: #e6ecf5;
+}
+.glass-strong {
+  background: rgba(11, 17, 32, 0.78);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e6ecf5;
+}
+
+.map-glow-blue { filter: drop-shadow(0 0 12px rgba(33, 150, 243, 0.55)); }
+.map-glow-green { filter: drop-shadow(0 0 14px rgba(76, 175, 80, 0.45)); }
+.map-glow-amber { filter: drop-shadow(0 0 10px rgba(251, 146, 60, 0.6)); }
+
+@keyframes mapPulse {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+.map-pulse-dot { animation: mapPulse 1.8s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+
+@keyframes mapDash {
+  to { stroke-dashoffset: -24; }
+}
+.map-listed-stroke {
+  stroke-dasharray: 6 4;
+  animation: mapDash 1.6s linear infinite;
+}
+
+@keyframes mapGlowPulse {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(251, 146, 60, 0)); }
+  50% { filter: drop-shadow(0 0 14px rgba(251, 146, 60, 0.85)); }
+}
+.map-listed-pulse { animation: mapGlowPulse 2s ease-in-out infinite; }
+
+.map-plot-hover {
+  transition: filter 0.15s ease, transform 0.15s ease;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.map-plot-hover:hover {
+  filter: drop-shadow(0 0 10px rgba(120, 200, 255, 0.7));
+}
+
+@keyframes mapShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
