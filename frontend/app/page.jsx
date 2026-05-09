@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import SectorMap from "@/components/SectorMap";
 import HomeHero from "@/components/HomeHero";
+import HomeFooterSections from "@/components/HomeFooterSections";
 
 export const metadata = {
   title: "Home — PlotChain Paradise Valley",
@@ -8,16 +9,19 @@ export const metadata = {
 
 export default function Home() {
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col">
       {/* Decorative image strip at the top */}
       <HomeHero />
 
-      {/* Full-remaining-height map */}
-      <div className="flex-1 relative overflow-hidden">
+      {/* Map at viewport-minus-hero height */}
+      <div className="relative h-[calc(100vh-64px)] overflow-hidden">
         <Suspense fallback={null}>
           <SectorMap />
         </Suspense>
       </div>
+
+      {/* Informational sections below the map */}
+      <HomeFooterSections />
     </div>
   );
 }
